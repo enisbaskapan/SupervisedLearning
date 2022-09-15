@@ -178,5 +178,5 @@ class Build(Train, Format, Preprocess):
         
         self.test_dict['y_test'] = y_test
         self.test_dict['X_test'] = X_test
-        
+        #yıyoyo
         

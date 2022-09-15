@@ -113,7 +113,7 @@ class Transform:
         data_scaled = scaler.fit_transform(data)
         return data_scaled, scaler
         
-    def transform_training_data(self, X_train, X_test):    
+    def transform_test_data(self, X_train, X_test):    
         
         scaler = MinMaxScaler()
         X_train = scaler.fit_transform(X_train)
@@ -123,7 +123,7 @@ class Transform:
     
 class Format:
 
-    def format_string(self, string):
+    def format_algorithm_string(self, string):
         
         digit_num = len([letter for letter in string if letter.isdigit()])
         algorithm = string[:-digit_num]
@@ -134,24 +134,26 @@ class Preprocess(Transform):
     
     def preprocess_test_data(self, data, dependent_variable):
         
-        data_dummies = pd.get_dummies(data, drop_first=True)
 
-        X = data_dummies.drop(dependent_variable, axis=1)
-        y = data_dummies[dependent_variable]
-
+        X = data.drop(dependent_variable, axis=1)
+        y = data[dependent_variable]
+        
+        X = pd.get_dummies(X, drop_first=True)
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-        X_train, X_test = self.transform_training_data(X_train, X_test)
+        X_train, X_test = self.transform_test_data(X_train, X_test)
 
 
         return  X_train, X_test, y_train, y_test
         
     def preprocess_deployment_data(self, data, dependent_variable):
         
-        data_dummies = pd.get_dummies(data, drop_first=True)
 
-        X = data_dummies.drop(dependent_variable, axis=1)
-        y = data_dummies[dependent_variable]
+        X = data.drop(dependent_variable, axis=1)
+        y = data[dependent_variable]
+        
+        X = pd.get_dummies(X, drop_first=True)
+        
         X, scaler = self.transform_data(X)
 
         return X, y, scaler
