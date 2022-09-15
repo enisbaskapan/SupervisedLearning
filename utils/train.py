@@ -6,17 +6,14 @@ from sklearn.svm import SVR
 
 from utils.process import Format, Preprocess
 
-class Train:
+class Create:
     
-    def train_regression_model(self, data, algorithm, parameters = {}):
+    def create_regression_model(self, algorithm, parameters = {}):
         """
-        Train a regression model
+        Create a regression model
 
         Parameters
         ----------
-        data : tuple, default = None
-            Independent and dependent variables inside a tuple. If input contains (X_test, y_test), function could be utilized for training purposes; if it 
-            contains (X,y), model can be saved and used in deployment.
 
 
         algorithm : {"LR", "PLS", "RFR", "SVR", "PR"}
@@ -64,9 +61,63 @@ class Train:
                                                                       loss = parameters['loss'],
                                                                       criterion = parameters['criterion'])
 
-        regressor.fit(data[0], data[1])
 
         return regressor
+    
+    def create_classification_model(self, algorithm, parameters = {}):
+        """
+        TCreate a classification model
+
+        Parameters
+        ----------
+    
+        algorithm : {"LR", "DTC", "RFC", "SVC", "KNN"}
+            algorithm abbreviation
+
+            LR: LogisticRegression
+            DTC: DecisionTreeClassifier
+            RFC: RandomForestClassifier
+            SVC: SupportVectorClassifier
+            KNN: KNeighborClassifier
+            
+
+        parameters: dictionary
+            Various parameters that could be defined in different choice of algorithms
+        """
+
+        if algorithm == 'LR' : classifier = LogisticRegression(random_state = 0,
+                                                              penalty = parameters['penalty'],
+                                                              solver = parameters['solver'],
+                                                              multi_class = parameters['multi_class']
+                                                             )
+
+        if algorithm == 'DTC': classifier = DecisionTreeClassifier(random_state = 0,
+                                                                  criterion = parameters['criterion'],
+                                                                  ccp_alpha = parameters['ccp_alpha']
+                                                                 )
+
+        if algorithm == 'RFC' : classifier = RandomForestClassifier(random_state = 0, 
+                                                                  n_estimators = parameters['n_estimators'], 
+                                                                  criterion = parameters['criterion'],
+                                                                  max_depth = parameters['max_depth'],
+                                                                  min_samples_split = parameters['min_samples_split'],
+                                                                  min_samples_leaf = parameters['min_samples_leaf'],
+                                                                  ccp_alpha = parameters['ccp_alpha'],
+                                                                  oob_score = parameters['oob_score'])
+
+        if algorithm == 'SVC' : classifier = SVC(random_state=0,
+                                                C = parameters['C'],
+                                                kernel = parameters['kernel'],
+                                               )
+        
+        if algorithm == 'KNN' : classifier = KNeighborsClassifier(n_neighbors= parameters['n_neighbors'],
+                                                                 weights = parameters['weights'],
+                                                                 algorithm = parameters['algorithm'],
+                                                                 leaf_size = parameters['leaf_size'])
+
+        classifier.fit(data[0], data[1])
+
+        return classifier
     
 class Build(Train, Format, Preprocess):
     
@@ -84,12 +135,12 @@ class Build(Train, Format, Preprocess):
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
                 
                 model_name = model[0]
-                algorithm = self.format_string(model_name)
+                algorithm = self.format_algorithm_string(model_name)
                 parameters = model[1]
                 train_data = (X_train, y_train) 
                 
                 print(f'Training regression model {model_name} for {key}')
-                regressor = self.train_regression_model(train_data , algorithm , parameters)
+                regressor = self.create_regression_model(train_data , algorithm , parameters)
                 print(f'Training done!')
                 predictions = regressor.predict(X_test)
                 print()
@@ -97,6 +148,32 @@ class Build(Train, Format, Preprocess):
                 self.test_dict['models'][key+model_name] = regressor
                 self.test_dict['predictions'][key+model_name] = predictions
                 
+                
+        
+        self.test_dict['y_test'] = y_test
+        self.test_dict['X_test'] = X_test
+        
+    def build_classification_models(self, models_list, dependent_variable):
+              
+        for key, data in self.test_dict['data'].items():
+            for model in models_list:
+
+                X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
+
+                model_name = model[0]
+                algorithm = self.format_algorithm_string(model_name)
+                parameters = model[1]
+                train_data = (X_train, y_train) 
+
+                print(f'Training classification model {model_name} for {key}')
+                classifier = self.create_regression_model(train_data , algorithm , parameters)
+                print(f'Training done!')
+                predictions = classifier.predict(X_test)
+                print()
+
+                self.test_dict['models'][key+model_name] = classifier
+                self.test_dict['predictions'][key+model_name] = predictions
+
                 
         
         self.test_dict['y_test'] = y_test
