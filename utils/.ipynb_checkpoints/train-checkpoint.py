@@ -4,6 +4,13 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.svm import SVR
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+
+
 from sklearn.feature_selection import RFE
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.feature_selection import SelectKBest
@@ -41,6 +48,7 @@ class Create:
         parameters: dictionary
             Various parameters that could be defined in different choice of algorithms
         """
+        """
         if algorithm == 'PR':
 
             regressor = LinearRegression()
@@ -51,6 +59,7 @@ class Create:
             regressor.fit(X_polynomial, data[1])
 
             return (regressor, polynomial)
+         """
 
         if algorithm == 'LR' : regressor = LinearRegression()
 
@@ -122,8 +131,6 @@ class Create:
                                                                  algorithm = parameters['algorithm'],
                                                                  leaf_size = parameters['leaf_size'])
 
-        classifier.fit(data[0], data[1])
-
         return classifier
     
     def create_feature_selection_model(self, estimator_model, selector_algorithm, selector_parameters = {}):
@@ -140,6 +147,40 @@ class Create:
                                                                                       n_features_to_select = selector_parameters['n_features_to_select'])
         
         return feature_selector
+    
+    def create_dimensionality_reduction(self,algorithm,parameters={}):
+        """
+        Train an dimensionality reduct,on model
+
+        Parameters
+        ----------
+        parameters: dictionary
+                Various parameters that could be defined in different choice of algorithms
+
+        algorithm:{'PCA','SPCA','LDA','QDA','KPCA'}
+             algorithm abbreviation
+
+        PCA: PrincipalComponentAnalysis
+        SPCA: SparsePCA
+        LDA: LinearDisriminantAnalysis
+        QDA: QuadriticDiscriminantAnalysis
+        KPCA: KernelDiscriminantAnlaysis
+
+
+        """
+
+        if algorithm == 'PCA': model = PCA(n_components=parameters['n_components'])
+
+        if algorithm == 'SPCA': model = SparcePCA(n_components=parameters['n_components'],random_state=0)
+
+        if algorithm == 'LDA':model = LinearDiscriminantAnalysis()
+
+        if algorithm == 'QDA':model = QuariticDiscriminantAnalysis()
+
+        if algorithm == 'KPCA':model = KernelPCA(n_components=parameters['n_components'],random_state=0)
+
+        return model
+    
     
 class Build(Create, Format, Preprocess):
     
@@ -169,11 +210,10 @@ class Build(Create, Format, Preprocess):
                 
                 self.test_dict['models'][key+model_name] = regressor
                 self.test_dict['predictions'][key+model_name] = predictions
-                
+                self.test_dict['X_test'][key] = X_test
                 
         
         self.test_dict['y_test'] = y_test
-        self.test_dict['X_test'] = X_test
         
     def build_classification_models(self, models_list, dependent_variable):
               
@@ -187,19 +227,19 @@ class Build(Create, Format, Preprocess):
                 parameters = model[1]
 
                 print(f'Training classification model {model_name} for {key}')
-                classifier = self.create_regression_model(algorithm , parameters)
-                regressor.fit(X_train, y_train)
+                classifier = self.create_classification_model(algorithm , parameters)
+                classifier.fit(X_train, y_train)
                 print(f'Training done!')
                 predictions = classifier.predict(X_test)
                 print()
 
                 self.test_dict['models'][key+model_name] = classifier
                 self.test_dict['predictions'][key+model_name] = predictions
+                self.test_dict['X_test'][key] = X_test
 
                 
         
         self.test_dict['y_test'] = y_test
-        self.test_dict['X_test'] = X_test
     
     def build_regression_models_feature_selection(self, models_list, dependent_variable):
         
@@ -233,8 +273,6 @@ class Build(Create, Format, Preprocess):
                 
                 self.test_dict['models'][key+model_name+selector_name] = regressor
                 self.test_dict['predictions'][key+model_name] = predictions
+                self.test_dict['X_test'][key] = X_test
                 
-                
-        
         self.test_dict['y_test'] = y_test
-        self.test_dict['X_test'] = X_test

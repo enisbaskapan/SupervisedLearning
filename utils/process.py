@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 from utils.test import Test
 
-class Assemble(Test):
+class Assemble(Test, Format):
     ''' Create dataframse with test values '''
     
     def assemble_test_tables(self, regression_test_dict):
@@ -47,8 +47,9 @@ class Assemble(Test):
         variability_values_lists = []   
         model_name_list = []
         for key, value in regression_test_dict['test_tables'].items():
-
-            variability_values_list = self.test_variability_values(value, regression_test_dict['X_test'])  
+            
+            data_name = self.format_data_string(key)
+            variability_values_list = self.test_variability_values(value, regression_test_dict['X_test'][data_name])  
             variability_values_lists.append(variability_values_list)
             model_name_list.append(key)
 
@@ -129,6 +130,20 @@ class Format:
         algorithm = string[:-digit_num]
         
         return algorithm
+    
+    def format_data_string(self, string):
+        data_name = ''
+        data_num = ''
+        for letter in string:
+            if letter.isdigit():
+                break
+            data_name += letter
+        for letter in string[len(data_name):]:
+            if not letter.isdigit():
+                break
+            data_num += letter
+        data = data_name + data_num
+        return data
     
 class Preprocess(Transform):
     
