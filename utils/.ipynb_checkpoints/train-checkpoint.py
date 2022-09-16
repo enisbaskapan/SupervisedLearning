@@ -4,6 +4,13 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.svm import SVR
 
+from sklearn.feature_selection import RFE
+from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectFromModel
+
+from sklearn.model_selection import train_test_split
+
 from utils.process import Format, Preprocess
 
 class Create:
@@ -119,7 +126,22 @@ class Create:
 
         return classifier
     
-class Build(Train, Format, Preprocess):
+    def create_feature_selection_model(self, estimator_model, selector_algorithm, selector_parameters = {}):
+        
+        if selector_algorithm == 'SFM' : feature_selector = SelectFromModel(estimator = estimator_model)
+
+        if selector_algorithm == 'RFE': feature_selector = RFE(estimator = estimator_model, 
+                                                                n_features_to_select = selector_parameters['n_features_to_select'], 
+                                                                step = selector_parameters['step'])
+
+        if selector_algorithm == 'SKB': feature_selector = SelectKBest(k = selector_parameters['k'])
+
+        if selector_algorithm == 'SFS': feature_selector = SequentialFeatureSelector(estimator = estimator_model, 
+                                                                                      n_features_to_select = selector_parameters['n_features_to_select'])
+        
+        return feature_selector
+    
+class Build(Create, Format, Preprocess):
     
     def __init__(self, test_dict):
         
@@ -137,10 +159,10 @@ class Build(Train, Format, Preprocess):
                 model_name = model[0]
                 algorithm = self.format_algorithm_string(model_name)
                 parameters = model[1]
-                train_data = (X_train, y_train) 
                 
                 print(f'Training regression model {model_name} for {key}')
-                regressor = self.create_regression_model(train_data , algorithm , parameters)
+                regressor = self.create_regression_model(algorithm , parameters)
+                regressor.fit(X_train, y_train)
                 print(f'Training done!')
                 predictions = regressor.predict(X_test)
                 print()
@@ -163,10 +185,10 @@ class Build(Train, Format, Preprocess):
                 model_name = model[0]
                 algorithm = self.format_algorithm_string(model_name)
                 parameters = model[1]
-                train_data = (X_train, y_train) 
 
                 print(f'Training classification model {model_name} for {key}')
-                classifier = self.create_regression_model(train_data , algorithm , parameters)
+                classifier = self.create_regression_model(algorithm , parameters)
+                regressor.fit(X_train, y_train)
                 print(f'Training done!')
                 predictions = classifier.predict(X_test)
                 print()
@@ -178,5 +200,41 @@ class Build(Train, Format, Preprocess):
         
         self.test_dict['y_test'] = y_test
         self.test_dict['X_test'] = X_test
-        #yıyoyo
+    
+    def build_regression_models_feature_selection(self, models_list, dependent_variable):
         
+        for key, data in self.test_dict['data'].items():
+     
+            for model in models_list:
+            
+                model_name = model[0]
+                algorithm = self.format_algorithm_string(model_name)
+                parameters = model[1]
+                selector_name = model[2]
+                selector_algorithm = self.format_algorithm_string(selector_name)
+                selector_parameters = model[3]
+                
+                X, y, _ = self.preprocess_data(data, dependent_variable)
+                
+                regressor = self.create_regression_model(algorithm , parameters)
+                
+                print(f'Selecting features with {selector_name} for {key}')
+                feature_selector = self.create_feature_selection_model(regressor, selector_algorithm, selector_parameters)
+                
+                X_selected = feature_selector.fit_transform(X, y)
+                
+                X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, random_state=0)
+                
+                print(f'Training regression model {model_name} for {key}')
+                regressor.fit(X_train, y_train)
+                print(f'Training done!')
+                predictions = regressor.predict(X_test)
+                print()
+                
+                self.test_dict['models'][key+model_name+selector_name] = regressor
+                self.test_dict['predictions'][key+model_name] = predictions
+                
+                
+        
+        self.test_dict['y_test'] = y_test
+        self.test_dict['X_test'] = X_test

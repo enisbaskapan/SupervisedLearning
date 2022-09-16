@@ -146,7 +146,7 @@ class Preprocess(Transform):
 
         return  X_train, X_test, y_train, y_test
         
-    def preprocess_deployment_data(self, data, dependent_variable):
+    def preprocess_data(self, data, dependent_variable):
         
 
         X = data.drop(dependent_variable, axis=1)
