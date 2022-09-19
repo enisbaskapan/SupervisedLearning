@@ -53,3 +53,17 @@ class Test:
         variability_values_list = [r2, adj_r2, evs]
 
         return variability_values_list
+    
+    def test_classification_report(self, y_true, y_pred):
+        report = classification_report(y_true, y_pred, output_dict=True)
+        accuracy = report['accuracy']
+        report_list = []
+        for target in dict(list(report.items())[:-3]):
+            class_ = target
+            precision = report[target]['precision']
+            recall = report[target]['recall']
+            f1score = report[target]['f1-score']
+            support = report[target]['support']
+            target_list = [class_, precision, recall, f1score, support, accuracy]
+            report_list.append(target_list)
+        return report_list

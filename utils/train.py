@@ -82,7 +82,7 @@ class Create:
     
     def create_classification_model(self, algorithm, parameters = {}):
         """
-        TCreate a classification model
+        Create a classification model
 
         Parameters
         ----------
@@ -134,6 +134,24 @@ class Create:
         return classifier
     
     def create_feature_selection_model(self, estimator_model, selector_algorithm, selector_parameters = {}):
+        """
+       Create an dimensionality reduct,on model
+
+       Parameters
+       ----------
+        parameters: dictionary
+                Various parameters that could be defined in different choice of algorithms
+
+        algorithm:{'SFM','RFE','SKB','SFS'}
+             algorithm abbreviation
+
+        SFM: SelectFromModel
+        RFE: RecursiveFeatureElimination
+        SKB: SelectKBest
+        SFS: SequentialFeatureSelection
+
+
+        """
         
         if selector_algorithm == 'SFM' : feature_selector = SelectFromModel(estimator = estimator_model)
 
@@ -148,9 +166,9 @@ class Create:
         
         return feature_selector
     
-    def create_dimensionality_reduction(self,algorithm,parameters={}):
+    def create_dimensionality_reduction_model(self,algorithm,parameters={}):
         """
-        Train an dimensionality reduct,on model
+        Create an dimensionality reduct,on model
 
         Parameters
         ----------
@@ -248,8 +266,8 @@ class Build(Create, Format, Preprocess):
             for model in models_list:
             
                 model_name = model[0]
-                algorithm = self.format_algorithm_string(model_name)
                 parameters = model[1]
+                algorithm = self.format_algorithm_string(model_name)
                 selector_name = model[2]
                 selector_algorithm = self.format_algorithm_string(selector_name)
                 selector_parameters = model[3]
