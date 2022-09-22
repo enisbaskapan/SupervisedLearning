@@ -7,6 +7,44 @@ from sklearn.model_selection import train_test_split
 
 from utils.test import Test
 
+
+class Format:
+
+    def format_algorithm_string(self, algorithm_string):
+        
+        digit_num = len([letter for letter in algorithm_string if letter.isdigit()])
+        algorithm = algorithm_string[:-digit_num]
+        
+        return algorithm
+    
+    def format_data_string(self, data_string):
+        """
+        Reformat data_string to store data
+        """
+
+        # Retrieve indexes of digits inside the data string
+        indexes = [index for index, letter in enumerate(data_string) if letter.isdigit()]
+
+        for index, index_value in enumerate(indexes):
+
+            # Assign the value on the previous index
+            previous_index_value = indexes[index - 1]
+
+            if index > 0:
+
+                # Compare index values that are in order to find the cut between data and algorithm strings
+                if previous_index_value + 1 != index_value:
+
+                    # Find the cut then break! 
+                    # Otherwise would be retrieving the entire string or get and error
+
+                    end_index_of_indexes = indexes.index(index_value)- 1
+                    end_index_of_data_string = indexes[end_index_of_indexes] + 1
+                    break
+
+        return data_string[:end_index_of_data_string]
+
+    
 class Assemble(Test, Format):
     ''' Create dataframse with test values '''
     
@@ -137,28 +175,6 @@ class Transform:
         
         return X_train, X_test
     
-class Format:
-
-    def format_algorithm_string(self, string):
-        
-        digit_num = len([letter for letter in string if letter.isdigit()])
-        algorithm = string[:-digit_num]
-        
-        return algorithm
-    
-    def format_data_string(self, string):
-        data_name = ''
-        data_num = ''
-        for letter in string:
-            if letter.isdigit():
-                break
-            data_name += letter
-        for letter in string[len(data_name):]:
-            if not letter.isdigit():
-                break
-            data_num += letter
-        data = data_name + data_num
-        return data
     
 class Preprocess(Transform):
     
