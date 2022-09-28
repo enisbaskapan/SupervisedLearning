@@ -12,6 +12,11 @@ class Format:
 
     def format_algorithm_string(self, algorithm_string):
         
+        """ 
+        Reformat algorithm_string to get algorithm name
+        
+        """
+        
         digit_num = len([letter for letter in algorithm_string if letter.isdigit()])
         algorithm = algorithm_string[:-digit_num]
         
@@ -96,7 +101,7 @@ class Assemble(Test, Format):
         return variability_values_df.transpose()
     
     def assemble_classification_report(self, classification_test_dict):
-    
+        ''' Returns a dataframe with classification report values for each model '''
         y_true = classification_test_dict['y_test']
 
         df_lists=[]

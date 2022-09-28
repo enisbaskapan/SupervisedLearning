@@ -55,6 +55,8 @@ class Test:
         return variability_values_list
     
     def test_classification_report(self, y_true, y_pred):
+        ''' Returns a list of classification report values ''' 
+        
         report = classification_report(y_true, y_pred, output_dict=True)
         accuracy = report['accuracy']
         report_list = []
