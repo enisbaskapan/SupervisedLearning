@@ -80,9 +80,9 @@ class Assemble(Test, Format):
             error_lists.append(error_list)
             model_name_list.append(key)
 
-        error_values_df = pd.DataFrame(error_lists, index=model_name_list, columns = ['MEPE','MPE','MEAE','MAE','MSE','RMSE', 'STD'])
+        error_values_df = pd.DataFrame(error_lists, index=model_name_list, columns = ['MEPE','MPE','MEAE','MAE','MSE','RMSE', 'NRMSE', 'STD'])
 
-        return error_values_df.transpose()
+        return error_values_df
     
     def assemble_variability_values(self, regression_test_dict):
         ''' Returns a dataframe with variability values for each model'''

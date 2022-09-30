@@ -67,7 +67,7 @@ class Create:
 
         if algorithm == 'RFR' : regressor = RandomForestRegressor(random_state = 0, 
                                                                   n_estimators = parameters['n_estimators'], 
-                                                                  criterion = parameters['criterion'], )
+                                                                  criterion = parameters['criterion'])
 
         if algorithm == 'SVR' : regressor = SVR(kernel = parameters['kernel'])
         
@@ -124,6 +124,8 @@ class Create:
         if algorithm == 'SVC' : classifier = SVC(random_state=0,
                                                 C = parameters['C'],
                                                 kernel = parameters['kernel'],
+                                                gamma = parameters['gamma'],
+                                                degree = parameters['degree']
                                                )
         
         if algorithm == 'KNN' : classifier = KNeighborsClassifier(n_neighbors= parameters['n_neighbors'],
@@ -207,6 +209,7 @@ class Build(Create, Format, Preprocess):
         self.test_dict = test_dict
         self.test_dict['predictions'] = {}
         self.test_dict['models'] = {}
+        self.test_dict['X_test'] = {}
 
     def build_regression_models(self, models_list, dependent_variable):
               
@@ -259,7 +262,7 @@ class Build(Create, Format, Preprocess):
         
         self.test_dict['y_test'] = y_test
     
-    def build_regression_models_feature_selection(self, models_list, dependent_variable):
+    def build_feature_selected_regression_models(self, models_list, dependent_variable):
         
         for key, data in self.test_dict['data'].items():
      

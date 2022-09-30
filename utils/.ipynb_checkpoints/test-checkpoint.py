@@ -22,8 +22,6 @@ class Test:
     def test_error_values(self, error_df):
         ''' Return a list of error metrics '''
         
-        index_list = ['MEPE','MPE','MEAE','MAE','MSE','RMSE', 'STD']
-
         mepe = round(error_df['error(%)'].median(), 3)
         mpe = round(error_df['error(%)'].mean(), 3)
 
@@ -31,10 +29,11 @@ class Test:
         mae = round(mean_absolute_error(error_df['true_values'], error_df['predictions']), 3)
         mse = round(mean_squared_error(error_df['true_values'], error_df['predictions']), 3)
         rmse = round(np.sqrt(mse), 3)
+        normalized_rmse = rmse/(error_df['true_values'].max()-error_df['true_values'].min())
 
         std = round(error_df['true_values'].std(), 3)
 
-        error_list = [mepe, mpe, meae, mae, mse, rmse, std]
+        error_list = [mepe, mpe, meae, mae, mse, rmse, normalized_rmse, std]
 
         return error_list
     
