@@ -61,21 +61,15 @@ class Create:
             return (regressor, polynomial)
          """
 
-        if algorithm == 'LR' : regressor = LinearRegression()
+        if algorithm == 'LR' : regressor = LinearRegression(**parameters)
 
-        if algorithm == 'PLS': regressor = PLSRegression(n_components = parameters['n_components'])
+        if algorithm == 'PLS': regressor = PLSRegression(**parameters)
 
-        if algorithm == 'RFR' : regressor = RandomForestRegressor(random_state = 0, 
-                                                                  n_estimators = parameters['n_estimators'], 
-                                                                  criterion = parameters['criterion'])
+        if algorithm == 'RFR' : regressor = RandomForestRegressor(**parameters)
 
-        if algorithm == 'SVR' : regressor = SVR(kernel = parameters['kernel'])
+        if algorithm == 'SVR' : regressor = SVR(**parameters)
         
-        if algorithm == 'GBR' : regressor = GradientBoostingRegressor(random_state=0,
-                                                                      learning_rate= parameters['learning_rate'],
-                                                                      n_estimators = parameters['n_estimators'],
-                                                                      loss = parameters['loss'],
-                                                                      criterion = parameters['criterion'])
+        if algorithm == 'GBR' : regressor = GradientBoostingRegressor(**parameters)
 
 
         return regressor
@@ -101,37 +95,15 @@ class Create:
             Various parameters that could be defined in different choice of algorithms
         """
 
-        if algorithm == 'LR' : classifier = LogisticRegression(random_state = 0,
-                                                              penalty = parameters['penalty'],
-                                                              solver = parameters['solver'],
-                                                              multi_class = parameters['multi_class']
-                                                             )
+        if algorithm == 'LR' : classifier = LogisticRegression(**parameters)
 
-        if algorithm == 'DTC': classifier = DecisionTreeClassifier(random_state = 0,
-                                                                  criterion = parameters['criterion'],
-                                                                  ccp_alpha = parameters['ccp_alpha']
-                                                                 )
+        if algorithm == 'DTC': classifier = DecisionTreeClassifier(**parameters)
 
-        if algorithm == 'RFC' : classifier = RandomForestClassifier(random_state = 0, 
-                                                                  n_estimators = parameters['n_estimators'], 
-                                                                  criterion = parameters['criterion'],
-                                                                  max_depth = parameters['max_depth'],
-                                                                  min_samples_split = parameters['min_samples_split'],
-                                                                  min_samples_leaf = parameters['min_samples_leaf'],
-                                                                  ccp_alpha = parameters['ccp_alpha'],
-                                                                  oob_score = parameters['oob_score'])
+        if algorithm == 'RFC' : classifier = RandomForestClassifier(**parameters)
 
-        if algorithm == 'SVC' : classifier = SVC(random_state=0,
-                                                C = parameters['C'],
-                                                kernel = parameters['kernel'],
-                                                gamma = parameters['gamma'],
-                                                degree = parameters['degree']
-                                               )
+        if algorithm == 'SVC' : classifier = SVC(**parameters)
         
-        if algorithm == 'KNN' : classifier = KNeighborsClassifier(n_neighbors= parameters['n_neighbors'],
-                                                                 weights = parameters['weights'],
-                                                                 algorithm = parameters['algorithm'],
-                                                                 leaf_size = parameters['leaf_size'])
+        if algorithm == 'KNN' : classifier = KNeighborsClassifier(**parameters)
 
         return classifier
     
@@ -155,16 +127,13 @@ class Create:
 
         """
         
-        if selector_algorithm == 'SFM' : feature_selector = SelectFromModel(estimator = estimator_model)
+        if selector_algorithm == 'SFM' : feature_selector = SelectFromModel(estimator = estimator_model, **selector_parameters)
 
-        if selector_algorithm == 'RFE': feature_selector = RFE(estimator = estimator_model, 
-                                                                n_features_to_select = selector_parameters['n_features_to_select'], 
-                                                                step = selector_parameters['step'])
+        if selector_algorithm == 'RFE': feature_selector = RFE(estimator = estimator_model, **selector_parameters)
 
-        if selector_algorithm == 'SKB': feature_selector = SelectKBest(k = selector_parameters['k'])
+        if selector_algorithm == 'SKB': feature_selector = SelectKBest(estimator = estimator_model, **selector_parameters)
 
-        if selector_algorithm == 'SFS': feature_selector = SequentialFeatureSelector(estimator = estimator_model, 
-                                                                                      n_features_to_select = selector_parameters['n_features_to_select'])
+        if selector_algorithm == 'SFS': feature_selector = SequentialFeatureSelector(estimator = estimator_model, **selector_parameters)
         
         return feature_selector
     
@@ -189,15 +158,15 @@ class Create:
 
         """
 
-        if algorithm == 'PCA': model = PCA(n_components=parameters['n_components'])
+        if algorithm == 'PCA': model = PCA(**parameters)
 
-        if algorithm == 'SPCA': model = SparcePCA(n_components=parameters['n_components'],random_state=0)
+        if algorithm == 'SPCA': model = SparcePCA(**parameters)
 
-        if algorithm == 'LDA':model = LinearDiscriminantAnalysis()
+        if algorithm == 'LDA':model = LinearDiscriminantAnalysis(**parameters)
 
-        if algorithm == 'QDA':model = QuariticDiscriminantAnalysis()
+        if algorithm == 'QDA':model = QuariticDiscriminantAnalysis(**parameters)
 
-        if algorithm == 'KPCA':model = KernelPCA(n_components=parameters['n_components'],random_state=0)
+        if algorithm == 'KPCA':model = KernelPCA(**parameters)
 
         return model
     
