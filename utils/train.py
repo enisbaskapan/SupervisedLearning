@@ -170,16 +170,50 @@ class Create:
 
         return model
     
+
+class Include(Create, Format, Preprocess):
     
-class Build(Create, Format, Preprocess):
+    def include_feature_selection(self, model, key, model_object, X_train, X_test, y_train):
+        selector_model = model[1] 
+        selector_name = selector_model['feature_selection'][0]
+        selector_algorithm = self.format_algorithm_string(selector_name)
+        selector_parameters = selector_model['feature_selection'][1]
+
+        print(f'Selecting features with {selector_name} for {key}')
+        feature_selector = self.create_feature_selection_model(model_object, selector_algorithm, selector_parameters)
+
+        X_train_selected = feature_selector.fit_transform(X_train, y_train)
+        X_test_selected = feature_selector.transform(X_test)
+        
+        return X_train_selected, X_test_selected
     
-    def __init__(self, test_dict):
+    def include_dimensionality_reduction(self, model, key, X_train, X_test, y_train):
+        dimentionality_reduction_model = model[1] 
+        dimentionality_reduction_name = selector_model['dimentionality_reduction'][0]
+        dimentionality_reduction_algorithm = self.format_algorithm_string(selector_name)
+        dimentionality_reduction_parameters = selector_model['dimentionality_reduction'][1]
+        
+
+        print(f'Reducing dimensions with {dimentionality_reduction_name} for {key}')
+        dimensionality_reducer = self.create_feature_selection_model(dimentionality_reduction_algorithm, dimentionality_reduction_parameters)
+        
+        X_train_reduced = dimensionality_reducer.fit_transform(X_train)
+        X_test_reduced = dimensionality_reducer.transform(X_test)
+        
+        return X_train_reduced, X_test_reduced
+    
+    
+class Build(Include):
+    
+    def __init__(self, test_dict, feature_selection=False, dimentionality_reduction=False):
         
         self.test_dict = test_dict
         self.test_dict['predictions'] = {}
         self.test_dict['models'] = {}
         self.test_dict['X_test'] = {}
-
+        self.feature_selection = feature_selection
+        self.dimensionality_reduction = dimentionality_reduction
+        
     def build_regression_models(self, models_list, dependent_variable):
               
         for key, data in self.test_dict['data'].items():
@@ -187,12 +221,24 @@ class Build(Create, Format, Preprocess):
                 
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
                 
-                model_name = model[0]
+                regression_model = model[0]
+                model_name = regression_model['model']
                 algorithm = self.format_algorithm_string(model_name)
-                parameters = model[1]
+                parameters = regression_model['parameters']
                 
-                print(f'Training regression model {model_name} for {key}')
                 regressor = self.create_regression_model(algorithm , parameters)
+                
+                if self.feature_selection: 
+                    X_train_selected, X_test_selected = self.include_feature_selection(model, key, regressor, X_train, X_test, y_train)
+                    X_train = X_train_selected
+                    X_test = X_test_selected
+                    
+                if self.dimensionality_reduction:
+                    X_train_reduced, X_test_reduce = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
+                    X_train = X_train_reduced
+                    X_test = X_test_reduced
+
+                print(f'Training regression model {model_name} for {key}')
                 regressor.fit(X_train, y_train)
                 print(f'Training done!')
                 predictions = regressor.predict(X_test)
@@ -204,7 +250,7 @@ class Build(Create, Format, Preprocess):
                 
         
         self.test_dict['y_test'] = y_test
-        
+
     def build_classification_models(self, models_list, dependent_variable):
               
         for key, data in self.test_dict['data'].items():
@@ -215,9 +261,20 @@ class Build(Create, Format, Preprocess):
                 model_name = model[0]
                 algorithm = self.format_algorithm_string(model_name)
                 parameters = model[1]
+                
+                classifier = self.create_classification_model(algorithm , parameters)
+                
+                if self.feature_selection: 
+                    X_train_selected, X_test_selected = self.include_feature_selection(model, key, classifier, X_train, X_test, y_train)
+                    X_train = X_train_selected
+                    X_test = X_test_selected
+                    
+                if self.dimensionality_reduction:
+                    X_train_reduced, X_test_reduce = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
+                    X_train = X_train_reduced
+                    X_test = X_test_reduced
 
                 print(f'Training classification model {model_name} for {key}')
-                classifier = self.create_classification_model(algorithm , parameters)
                 classifier.fit(X_train, y_train)
                 print(f'Training done!')
                 predictions = classifier.predict(X_test)
@@ -227,42 +284,5 @@ class Build(Create, Format, Preprocess):
                 self.test_dict['predictions'][key+model_name] = predictions
                 self.test_dict['X_test'][key] = X_test
 
-                
-        
-        self.test_dict['y_test'] = y_test
-    
-    def build_feature_selected_regression_models(self, models_list, dependent_variable):
-        
-        for key, data in self.test_dict['data'].items():
-     
-            for model in models_list:
-            
-                model_name = model[0]
-                parameters = model[1]
-                algorithm = self.format_algorithm_string(model_name)
-                selector_name = model[2]
-                selector_algorithm = self.format_algorithm_string(selector_name)
-                selector_parameters = model[3]
-                
-                X, y, _ = self.preprocess_data(data, dependent_variable)
-                
-                regressor = self.create_regression_model(algorithm , parameters)
-                
-                print(f'Selecting features with {selector_name} for {key}')
-                feature_selector = self.create_feature_selection_model(regressor, selector_algorithm, selector_parameters)
-                
-                X_selected = feature_selector.fit_transform(X, y)
-                
-                X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, random_state=0)
-                
-                print(f'Training regression model {model_name} for {key}')
-                regressor.fit(X_train, y_train)
-                print(f'Training done!')
-                predictions = regressor.predict(X_test)
-                print()
-                
-                self.test_dict['models'][key+model_name+selector_name] = regressor
-                self.test_dict['predictions'][key+model_name] = predictions
-                self.test_dict['X_test'][key] = X_test
                 
         self.test_dict['y_test'] = y_test
