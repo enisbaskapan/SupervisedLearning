@@ -16,6 +16,13 @@ from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import SelectFromModel
 
+from sklearn.decomposition import PCA
+from sklearn.decomposition import SparsePCA
+from sklearn.decomposition import KernelPCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+
+
 from sklearn.model_selection import train_test_split
 
 from utils.process import Format, Preprocess
@@ -160,11 +167,11 @@ class Create:
 
         if algorithm == 'PCA': model = PCA(**parameters)
 
-        if algorithm == 'SPCA': model = SparcePCA(**parameters)
+        if algorithm == 'SPCA': model = SparsePCA(**parameters)
 
         if algorithm == 'LDA':model = LinearDiscriminantAnalysis(**parameters)
 
-        if algorithm == 'QDA':model = QuariticDiscriminantAnalysis(**parameters)
+        if algorithm == 'QDA':model = QuadraticDiscriminantAnalysis(**parameters)
 
         if algorithm == 'KPCA':model = KernelPCA(**parameters)
 
@@ -172,7 +179,7 @@ class Create:
     
 
 class Include(Create, Format, Preprocess):
-    
+
     def include_feature_selection(self, model, key, model_object, X_train, X_test, y_train):
         selector_model = model[1] 
         selector_name = selector_model['feature_selection'][0]
