@@ -60,7 +60,9 @@ class Assemble(Test, Format):
         for key, value in regression_test_dict['predictions'].items():
 
             error_df = pd.DataFrame()
-            error_df['true_values'] = regression_test_dict['y_test']
+            data_name = self.format_data_string(key)
+            y_true = regression_test_dict['y_test'][data_name]
+            error_df['true_values'] = y_true
             error_df['predictions'] = value
 
             # Retrieve percentage error values for each model
@@ -102,11 +104,12 @@ class Assemble(Test, Format):
     
     def assemble_classification_report(self, classification_test_dict):
         ''' Returns a dataframe with classification report values for each model '''
-        y_true = classification_test_dict['y_test']
-
+        
         df_lists=[]
 
         for key, value in classification_test_dict['predictions'].items():
+            data_name = self.format_data_string(key)
+            y_true = classification_test_dict['y_test'][data_name]
             y_pred = value
             report_list = self.test_classification_report(y_true, y_pred)
             model_names_list=[]

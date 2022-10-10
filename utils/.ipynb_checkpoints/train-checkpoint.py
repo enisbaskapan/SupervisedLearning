@@ -218,6 +218,7 @@ class Build(Include):
         self.test_dict['predictions'] = {}
         self.test_dict['models'] = {}
         self.test_dict['X_test'] = {}
+        self.test_dict['y_test'] = {}
         self.feature_selection = feature_selection
         self.dimensionality_reduction = dimensionality_reduction
         
@@ -259,10 +260,9 @@ class Build(Include):
                 self.test_dict['models'][label] = regressor
                 self.test_dict['predictions'][label] = predictions
                 self.test_dict['X_test'][key] = X_test
-                
+                self.test_dict['y_test'][key] = y_test
         
-        self.test_dict['y_test'] = y_test
-
+        
     def build_classification_models(self, models_list, dependent_variable):
               
         for key, data in self.test_dict['data'].items():
@@ -301,6 +301,6 @@ class Build(Include):
                 self.test_dict['models'][label] = classifier
                 self.test_dict['predictions'][label] = predictions
                 self.test_dict['X_test'][key] = X_test
-
+                self.test_dict['y_test'][key] = y_test
                 
-        self.test_dict['y_test'] = y_test
+            
