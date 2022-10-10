@@ -192,34 +192,34 @@ class Include(Create, Format, Preprocess):
         X_train_selected = feature_selector.fit_transform(X_train, y_train)
         X_test_selected = feature_selector.transform(X_test)
         
-        return X_train_selected, X_test_selected
+        return X_train_selected, X_test_selected, selector_name
     
     def include_dimensionality_reduction(self, model, key, X_train, X_test, y_train):
-        dimentionality_reduction_model = model[1] 
-        dimentionality_reduction_name = selector_model['dimentionality_reduction'][0]
-        dimentionality_reduction_algorithm = self.format_algorithm_string(selector_name)
-        dimentionality_reduction_parameters = selector_model['dimentionality_reduction'][1]
+        dimensionality_reduction_model = model[1] 
+        dimensionality_reduction_name = dimensionality_reduction_model['dimensionality_reduction'][0]
+        dimensionality_reduction_algorithm = self.format_algorithm_string(dimensionality_reduction_name)
+        dimensionality_reduction_parameters = dimensionality_reduction_model['dimensionality_reduction'][1]
         
 
-        print(f'Reducing dimensions with {dimentionality_reduction_name} for {key}')
-        dimensionality_reducer = self.create_feature_selection_model(dimentionality_reduction_algorithm, dimentionality_reduction_parameters)
+        print(f'Reducing dimensions with {dimensionality_reduction_name} for {key}')
+        dimensionality_reducer = self.create_dimensionality_reduction_model(dimensionality_reduction_algorithm, dimensionality_reduction_parameters)
         
         X_train_reduced = dimensionality_reducer.fit_transform(X_train)
         X_test_reduced = dimensionality_reducer.transform(X_test)
         
-        return X_train_reduced, X_test_reduced
+        return X_train_reduced, X_test_reduced, dimensionality_reduction_name
     
     
 class Build(Include):
     
-    def __init__(self, test_dict, feature_selection=False, dimentionality_reduction=False):
+    def __init__(self, test_dict, feature_selection=False, dimensionality_reduction=False):
         
         self.test_dict = test_dict
         self.test_dict['predictions'] = {}
         self.test_dict['models'] = {}
         self.test_dict['X_test'] = {}
         self.feature_selection = feature_selection
-        self.dimensionality_reduction = dimentionality_reduction
+        self.dimensionality_reduction = dimensionality_reduction
         
     def build_regression_models(self, models_list, dependent_variable):
               
@@ -233,17 +233,22 @@ class Build(Include):
                 algorithm = self.format_algorithm_string(model_name)
                 parameters = regression_model['parameters']
                 
+                # Dict names
+                label = key+model_name
+                
                 regressor = self.create_regression_model(algorithm , parameters)
                 
                 if self.feature_selection: 
-                    X_train_selected, X_test_selected = self.include_feature_selection(model, key, regressor, X_train, X_test, y_train)
+                    X_train_selected, X_test_selected, selector_name = self.include_feature_selection(model, key, regressor, X_train, X_test, y_train)
                     X_train = X_train_selected
                     X_test = X_test_selected
-                    
+                    label += selector_name
+
                 if self.dimensionality_reduction:
-                    X_train_reduced, X_test_reduce = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
+                    X_train_reduced, X_test_reduced, reducer_name = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
                     X_train = X_train_reduced
                     X_test = X_test_reduced
+                    label += reducer_name
 
                 print(f'Training regression model {model_name} for {key}')
                 regressor.fit(X_train, y_train)
@@ -251,8 +256,8 @@ class Build(Include):
                 predictions = regressor.predict(X_test)
                 print()
                 
-                self.test_dict['models'][key+model_name] = regressor
-                self.test_dict['predictions'][key+model_name] = predictions
+                self.test_dict['models'][label] = regressor
+                self.test_dict['predictions'][label] = predictions
                 self.test_dict['X_test'][key] = X_test
                 
         
@@ -265,21 +270,27 @@ class Build(Include):
 
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
 
-                model_name = model[0]
+                classification_model = model[0]
+                model_name = classification_model['model']
                 algorithm = self.format_algorithm_string(model_name)
-                parameters = model[1]
+                parameters = classification_model['parameters']
+                
+                # Dict names
+                label = key+model_name
                 
                 classifier = self.create_classification_model(algorithm , parameters)
                 
                 if self.feature_selection: 
-                    X_train_selected, X_test_selected = self.include_feature_selection(model, key, classifier, X_train, X_test, y_train)
+                    X_train_selected, X_test_selected, selector_name = self.include_feature_selection(model, key, classifier, X_train, X_test, y_train)
                     X_train = X_train_selected
                     X_test = X_test_selected
+                    label += selector_name
                     
                 if self.dimensionality_reduction:
-                    X_train_reduced, X_test_reduce = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
+                    X_train_reduced, X_test_reduced, reducer_name = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
                     X_train = X_train_reduced
                     X_test = X_test_reduced
+                    label += reducer_name
 
                 print(f'Training classification model {model_name} for {key}')
                 classifier.fit(X_train, y_train)
@@ -287,8 +298,8 @@ class Build(Include):
                 predictions = classifier.predict(X_test)
                 print()
 
-                self.test_dict['models'][key+model_name] = classifier
-                self.test_dict['predictions'][key+model_name] = predictions
+                self.test_dict['models'][label] = classifier
+                self.test_dict['predictions'][label] = predictions
                 self.test_dict['X_test'][key] = X_test
 
                 

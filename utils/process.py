@@ -108,9 +108,9 @@ class Assemble(Test, Format):
 
         for key, value in classification_test_dict['predictions'].items():
             y_pred = value
-            model_names_list=[]
-            model_names_list.extend([key, key])
             report_list = self.test_classification_report(y_true, y_pred)
+            model_names_list=[]
+            model_names_list.extend([key for i in range(len(report_list))])
             df = pd.DataFrame(report_list, index= model_names_list, columns = ['CLASS','PRECISION','RECALL','F1-SCORE','SUPPORT','ACCURACY'])
             df_lists.append(df)
         return pd.concat(df_lists)
