@@ -54,17 +54,12 @@ class Test:
         return variability_values_list
     
     def test_classification_report(self, y_true, y_pred):
-        ''' Returns a list of classification report values ''' 
-        
-        report = classification_report(y_true, y_pred, output_dict=True)
-        accuracy = report['accuracy']
-        report_list = []
-        for target in dict(list(report.items())[:-3]):
-            class_ = target
-            precision = report[target]['precision']
-            recall = report[target]['recall']
-            f1score = report[target]['f1-score']
-            support = report[target]['support']
-            target_list = [class_, precision, recall, f1score, support, accuracy]
-            report_list.append(target_list)
-        return report_list
+        ''' Returns a dictionary of classification report results'''
+        classification_report_dictionary = classification_report(y_true, y_pred, output_dict=True)
+        report_list = list(classification_report_dictionary.keys())
+        report_classes_list = report_list[:-3]
+        accuracy = classification_report_dictionary['accuracy']
+
+        for class_ in report_classes_list: classification_report_dictionary[class_]['accuracy'] = accuracy
+
+        return classification_report_dictionary

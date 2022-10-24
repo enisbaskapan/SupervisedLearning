@@ -25,6 +25,9 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 from sklearn.model_selection import train_test_split
 
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras import Sequential
+
 from utils.process import Format, Preprocess
 
 class Create:
@@ -88,7 +91,7 @@ class Create:
         Parameters
         ----------
     
-        algorithm : {"LR", "DTC", "RFC", "SVC", "KNN"}
+        algorithm : {"LR", "DTC", "RFC", "SVC", "KNN", "LDA", "QDA"}
             algorithm abbreviation
 
             LR: LogisticRegression
@@ -96,6 +99,8 @@ class Create:
             RFC: RandomForestClassifier
             SVC: SupportVectorClassifier
             KNN: KNeighborClassifier
+            LDA: LinearDisriminantAnalysis
+            QDA: QuadriticDiscriminantAnalysis
             
 
         parameters: dictionary
@@ -111,12 +116,17 @@ class Create:
         if algorithm == 'SVC' : classifier = SVC(**parameters)
         
         if algorithm == 'KNN' : classifier = KNeighborsClassifier(**parameters)
+        
+        if algorithm == 'LDA':model = LinearDiscriminantAnalysis(**parameters)
+
+        if algorithm == 'QDA':model = QuadraticDiscriminantAnalysis(**parameters)
+
 
         return classifier
     
     def create_feature_selection_model(self, estimator_model, selector_algorithm, selector_parameters = {}):
         """
-       Create an dimensionality reduct,on model
+       Create a feature selection model
 
        Parameters
        ----------
@@ -146,20 +156,18 @@ class Create:
     
     def create_dimensionality_reduction_model(self,algorithm,parameters={}):
         """
-        Create an dimensionality reduct,on model
+        Create a dimensionality reduction model
 
         Parameters
         ----------
         parameters: dictionary
                 Various parameters that could be defined in different choice of algorithms
 
-        algorithm:{'PCA','SPCA','LDA','QDA','KPCA'}
+        algorithm:{'PCA','SPCA','LDA'}
              algorithm abbreviation
 
         PCA: PrincipalComponentAnalysis
         SPCA: SparsePCA
-        LDA: LinearDisriminantAnalysis
-        QDA: QuadriticDiscriminantAnalysis
         KPCA: KernelDiscriminantAnlaysis
 
 
@@ -169,18 +177,66 @@ class Create:
 
         if algorithm == 'SPCA': model = SparsePCA(**parameters)
 
-        if algorithm == 'LDA':model = LinearDiscriminantAnalysis(**parameters)
-
-        if algorithm == 'QDA':model = QuadraticDiscriminantAnalysis(**parameters)
-
         if algorithm == 'KPCA':model = KernelPCA(**parameters)
+        
+        if algorithm == 'AE': model = self.create_autoencoder_model(parameters['encoder_layers'], parameters['decoder_layers'], parameters['compile_parameters'])
 
         return model
+    
+    def create_deep_learning_model(self, layers, compile_parameters={}):
+        """
+        Create and compile a deep learning model
+        
+        Parameters
+        ----------
+        layers: list
+            List of neural network layers
+            
+        compile_parameters: dictionary
+            Parameters for compile method in dictionary format
+        """
+        network = Sequential(layers)
+        network.compile(**compile_parameters)
+
+        return network
+    
+    def create_autoencoder_model(self, encoder_layers, decoder_layers, compile_parameters={}):
+         """
+        Create and compile a autoencoder model. Returns Autoencoder and Encoder in tuple format
+        
+        Parameters
+        ----------
+        encoder_layers: list
+            List of encoder layers
+            
+        decoder_layers: list
+            List of decoder layers
+            
+        compile_parameters: dictionary
+            Parameters for compile method in dictionary format
+        """
+        encoder = Sequential(encoder_layers)
+        decoder = Sequential(decoder_layers)
+        autoencoder = Sequential([encoder,decoder])
+        autoencoder.compile(**compile_parameters)
+        
+        return (autoencoder, encoder)
+    
+    def create_time_series_model(self, algorithm, data, parameters={}):
+        
+        if algorithm == 'AAR' : ts_model = pm.auto_arima(data, **parameters)
+
+        if algorithm == 'PRH': ts_model = Prophet(**parameters)
+        
+        return ts_model
     
 
 class Include(Create, Format, Preprocess):
 
     def include_feature_selection(self, model, key, model_object, X_train, X_test, y_train):
+        """
+        Apply feature selection on train and test values
+        """
         selector_model = model[1] 
         selector_name = selector_model['feature_selection'][0]
         selector_algorithm = self.format_algorithm_string(selector_name)
@@ -195,6 +251,9 @@ class Include(Create, Format, Preprocess):
         return X_train_selected, X_test_selected, selector_name
     
     def include_dimensionality_reduction(self, model, key, X_train, X_test, y_train):
+        """
+        Apply dimensionality reduction on train and test values
+        """
         dimensionality_reduction_model = model[1] 
         dimensionality_reduction_name = dimensionality_reduction_model['dimensionality_reduction'][0]
         dimensionality_reduction_algorithm = self.format_algorithm_string(dimensionality_reduction_name)
@@ -202,8 +261,18 @@ class Include(Create, Format, Preprocess):
         
 
         print(f'Reducing dimensions with {dimensionality_reduction_name} for {key}')
+        
         dimensionality_reducer = self.create_dimensionality_reduction_model(dimensionality_reduction_algorithm, dimensionality_reduction_parameters)
         
+        if dimensionality_reduction_algorithm == 'AE':
+            autoencoder = dimensionality_reducer[0]
+            encoder = dimensionality_reducer[1]
+            autoencoder.fit(X_train, X_train, **dimensionality_reduction_parameters['fit_parameters'])
+            X_train_reduced = encoder.predict(X_train)
+            X_test_reduced = encoder.predict(X_test)
+            
+            return X_train_reduced, X_test_reduced, dimensionality_reduction_name
+            
         X_train_reduced = dimensionality_reducer.fit_transform(X_train)
         X_test_reduced = dimensionality_reducer.transform(X_test)
         
@@ -223,7 +292,17 @@ class Build(Include):
         self.dimensionality_reduction = dimensionality_reduction
         
     def build_regression_models(self, models_list, dependent_variable):
-              
+        """
+        Build multiple regression models on multiple data.
+        
+        Parameters
+        ----------
+        models_list: list
+            List of regression models and parameters.
+            
+        dependent_variable: string
+            Name of the variable that model is going to predict
+        """      
         for key, data in self.test_dict['data'].items():
             for model in models_list:
                 
@@ -264,7 +343,17 @@ class Build(Include):
         
         
     def build_classification_models(self, models_list, dependent_variable):
-              
+        """
+        Build multiple classification models on multiple data.
+        
+        Parameters
+        ----------
+        models_list: list
+            List of classification models and parameters.
+            
+        dependent_variable: string
+            Name of the variable that model is going to predict
+        """       
         for key, data in self.test_dict['data'].items():
             for model in models_list:
 
@@ -303,4 +392,105 @@ class Build(Include):
                 self.test_dict['X_test'][key] = X_test
                 self.test_dict['y_test'][key] = y_test
                 
+    def build_deep_learning_models(self, models_list, dependent_variable, compile_parameters={}, fit_parameters={}):
+        """
+        Build multiple regression modelson multiple data.
+        
+        Parameters
+        ----------
+        models_list: list
+            List of deep learning models and parameters.
             
+        dependent_variable: string
+            Name of the variable that model is going to predict
+        
+        compile_parameters: dictionary
+            Parameters that are going to be used for compiling the neural network.
+        
+        fit_parameters: dictionary
+            Parameters that are going to be used for training the neural network
+        """   
+        for key, data in self.test_dict['data'].items():
+            for model in models_list:
+
+                X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
+
+                network_model = model[0]
+                model_name = network_model['model']
+                kind = self.format_algorithm_string(model_name)
+                layers = network_model['layers']
+                compile_parameters = network_model['compile_parameters']
+                fit_parameters = network_model['fit_parameters']
+
+                # Dict names
+                label = key+model_name
+                
+                #Create NN 
+                nn = self.create_deep_learning_model(layers, compile_parameters)
+                
+                if self.feature_selection: 
+                    X_train_selected, X_test_selected, selector_name = self.include_feature_selection(model, key, nn, X_train, X_test, y_train)
+                    X_train = X_train_selected
+                    X_test = X_test_selected
+                    label += selector_name
+
+                if self.dimensionality_reduction:
+                    X_train_reduced, X_test_reduced, reducer_name = self.include_dimensionality_reduction(model, key, X_train, X_test, y_train)
+                    X_train = X_train_reduced
+                    X_test = X_test_reduced
+                    label += reducer_name
+                
+                print(f'Training deeplearning model {model_name} for {key}')
+                nn.fit(X_train, y_train, **fit_parameters)
+                print(f'Training done!')
+                predictions = nn.predict(X_test)
+                print()
+
+                self.test_dict['models'][label] = nn
+                self.test_dict['predictions'][label] = predictions
+                self.test_dict['X_test'][key] = X_test
+                self.test_dict['y_test'][key] = y_test
+                
+    def build_time_series_models(self, models_list):
+
+        for key, data in self.test_dict['data'].items():
+            for model in models_list:
+                
+                time_series_model = model[0]
+                model_name = time_series_model['model']
+                algorithm = self.format_algorithm_string(model_name)
+                parameters = time_series_model['parameters']
+                test_size = time_series_model['test_size']
+                
+                #Change columns names if algorithm is Prophet
+                if algorithm == 'PRH':
+                    data = self.format_prophet_data(data)
+                    
+                train, test= self.preprocess_time_series_data(data, test_size)
+    
+                # Dict names
+                label = key+model_name
+                
+                print(f'Creating time series model {model_name} for {key}')
+                ts_model = self.create_time_series_model(algorithm, data , parameters)
+                print('Model created!')
+                ts_model.fit(train)
+                
+                if algorithm == 'PRH':
+                    #Drop y values from test dataframe to make future dataframe for Prophet.
+                    predictions = ts_model.predict(test.drop('y', axis=1))
+                    predictions = predictions[['ds', 'yhat']]
+                    predictions = predictions.set_index('ds')
+                    
+                    #Format the test and train tables so index is datetime column
+                    train, test = self.format_prophet_index(train, test)
+                
+                else:
+                    predictions = ts_model.predict(n_periods = test.shape[0])
+
+                self.test_dict['models'][label] = ts_model
+                self.test_dict['predictions'][label] = predictions
+                #Because there is no X - y split in time series, train is labeled as X_test and test is labeled as y_test.
+                self.test_dict['X_test'][key] = train
+                self.test_dict['y_test'][key] = test
+

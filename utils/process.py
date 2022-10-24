@@ -4,6 +4,8 @@ from math import ceil
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
+from ipywidgets import interact, fixed
+import ipywidgets as widgets
 
 from utils.test import Test
 
@@ -21,6 +23,7 @@ class Format:
         algorithm = algorithm_string[:-digit_num]
         
         return algorithm
+    
     
     def format_data_string(self, data_string):
         """
@@ -48,7 +51,42 @@ class Format:
                     break
 
         return data_string[:end_index_of_data_string]
+    
+    
+    def format_classification_report(self, classification_report_dictionary):
+        """
+        Reformat classification report dictionary to store result in a dataframe
+        """
+        del classification_report_dictionary['accuracy']
+        del classification_report_dictionary['macro avg']
+        del classification_report_dictionary['weighted avg']
 
+        classification_report_df = pd.DataFrame.from_dict(classification_report_dictionary).transpose()
+        classification_report_df = classification_report_df.reset_index()
+        classification_report_df = classification_report_df.rename(columns={'index': 'class'})
+
+        return classification_report_df
+    
+    
+    def format_input_layer(layers, n_features):
+        
+        input_layer = Input(shape=(n_features,))
+        layers.insert(0, input_layer)
+        return layers
+    
+    def format_prophet_data(self, data):
+        
+        data = data.reset_index()
+        data.columns = ['ds','y']
+        
+        return data
+    
+    def format_prophet_index(self, train, test):
+        
+        train = train.set_index('ds')
+        test = test.set_index('ds')
+        
+        return train, test
     
 class Assemble(Test, Format):
     ''' Create dataframse with test values '''
@@ -83,7 +121,8 @@ class Assemble(Test, Format):
             model_name_list.append(key)
 
         error_values_df = pd.DataFrame(error_lists, index=model_name_list, columns = ['MEPE','MPE','MEAE','MAE','MSE','RMSE', 'NRMSE', 'STD'])
-
+        error_values_df.index.names = ['ALGORITHM']
+ 
         return error_values_df
     
     def assemble_variability_values(self, regression_test_dict):
@@ -99,24 +138,26 @@ class Assemble(Test, Format):
             model_name_list.append(key)
 
         variability_values_df = pd.DataFrame(variability_values_lists, index=model_name_list, columns = ['R2', 'R2^', 'EVS'])
-
-        return variability_values_df.transpose()
+        variability_values_df.index.names = ['ALGORITHM']
+        return variability_values_df
     
     def assemble_classification_report(self, classification_test_dict):
         ''' Returns a dataframe with classification report values for each model '''
         
-        df_lists=[]
+        classification_df= pd.DataFrame()
 
         for key, value in classification_test_dict['predictions'].items():
             data_name = self.format_data_string(key)
             y_true = classification_test_dict['y_test'][data_name]
             y_pred = value
-            report_list = self.test_classification_report(y_true, y_pred)
-            model_names_list=[]
-            model_names_list.extend([key for i in range(len(report_list))])
-            df = pd.DataFrame(report_list, index= model_names_list, columns = ['CLASS','PRECISION','RECALL','F1-SCORE','SUPPORT','ACCURACY'])
-            df_lists.append(df)
-        return pd.concat(df_lists)
+            
+            classification_report_dictionary = self.test_classification_report(y_true, y_pred)
+            classification_report_df = self.format_classification_report(classification_report_dictionary)
+            classification_report_df['ALGORITHM'] = key
+            classification_report_df.set_index('ALGORITHM', inplace=True)
+            classification_df = pd.concat([classification_df, classification_report_df])
+        classification_df.columns = classification_df.columns.str.upper()
+        return classification_df
     
 class Categorize:
     
@@ -211,3 +252,9 @@ class Preprocess(Transform):
         X, scaler = self.transform_data(X)
 
         return X, y, scaler
+    
+    def preprocess_time_series_data(self, data, test_size):
+        
+        train, test = model_selection.train_test_split(data, test_size=test_size)
+        
+        return train, test
