@@ -88,6 +88,13 @@ class Format:
         
         return train, test
     
+    def format_prophet_predictions(self, predictions):
+        
+        predictions = predictions[['ds', 'yhat']]
+        predictions = predictions.set_index('ds')
+        
+        return predictions
+    
 class Assemble(Test, Format):
     ''' Create dataframse with test values '''
     

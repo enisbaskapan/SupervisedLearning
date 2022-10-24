@@ -30,6 +30,10 @@ from tensorflow.keras import Sequential
 
 from utils.process import Format, Preprocess
 
+#import pmdarima as pm
+#from pmdarima import model_selection
+#from prophet import Prophet
+
 class Create:
     
     def create_regression_model(self, algorithm, parameters = {}):
@@ -201,7 +205,7 @@ class Create:
         return network
     
     def create_autoencoder_model(self, encoder_layers, decoder_layers, compile_parameters={}):
-         """
+        """
         Create and compile a autoencoder model. Returns Autoencoder and Encoder in tuple format
         
         Parameters
@@ -288,6 +292,7 @@ class Build(Include):
         self.test_dict['models'] = {}
         self.test_dict['X_test'] = {}
         self.test_dict['y_test'] = {}
+        self.test_dict['results'] = {}
         self.feature_selection = feature_selection
         self.dimensionality_reduction = dimensionality_reduction
         
@@ -441,7 +446,7 @@ class Build(Include):
                     label += reducer_name
                 
                 print(f'Training deeplearning model {model_name} for {key}')
-                nn.fit(X_train, y_train, **fit_parameters)
+                result = nn.fit(X_train, y_train, **fit_parameters)
                 print(f'Training done!')
                 predictions = nn.predict(X_test)
                 print()
@@ -450,7 +455,8 @@ class Build(Include):
                 self.test_dict['predictions'][label] = predictions
                 self.test_dict['X_test'][key] = X_test
                 self.test_dict['y_test'][key] = y_test
-                
+                self.test_dict['results'][label] = result
+             
     def build_time_series_models(self, models_list):
 
         for key, data in self.test_dict['data'].items():
@@ -479,8 +485,7 @@ class Build(Include):
                 if algorithm == 'PRH':
                     #Drop y values from test dataframe to make future dataframe for Prophet.
                     predictions = ts_model.predict(test.drop('y', axis=1))
-                    predictions = predictions[['ds', 'yhat']]
-                    predictions = predictions.set_index('ds')
+                    predictions = self.format_prophet_predictions
                     
                     #Format the test and train tables so index is datetime column
                     train, test = self.format_prophet_index(train, test)
