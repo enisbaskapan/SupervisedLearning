@@ -95,6 +95,10 @@ class Format:
         
         return predictions
     
+    def format_models_list(self, model):
+        
+        return list(model.values())
+    
 class Assemble(Test, Format):
     ''' Create dataframse with test values '''
     

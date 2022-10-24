@@ -30,9 +30,9 @@ from tensorflow.keras import Sequential
 
 from utils.process import Format, Preprocess
 
-#import pmdarima as pm
-#from pmdarima import model_selection
-#from prophet import Prophet
+import pmdarima as pm
+from pmdarima import model_selection
+from prophet import Prophet
 
 class Create:
     
@@ -313,10 +313,8 @@ class Build(Include):
                 
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
                 
-                regression_model = model[0]
-                model_name = regression_model['model']
+                model_name, parameters = self.format_models_list(model[0])
                 algorithm = self.format_algorithm_string(model_name)
-                parameters = regression_model['parameters']
                 
                 # Dict names
                 label = key+model_name
@@ -364,10 +362,8 @@ class Build(Include):
 
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
 
-                classification_model = model[0]
-                model_name = classification_model['model']
+                model_name, parameters = self.format_models_list(model[0])
                 algorithm = self.format_algorithm_string(model_name)
-                parameters = classification_model['parameters']
                 
                 # Dict names
                 label = key+model_name
@@ -399,7 +395,7 @@ class Build(Include):
                 
     def build_deep_learning_models(self, models_list, dependent_variable, compile_parameters={}, fit_parameters={}):
         """
-        Build multiple regression modelson multiple data.
+        Build multiple regression models on multiple data.
         
         Parameters
         ----------
@@ -419,14 +415,10 @@ class Build(Include):
             for model in models_list:
 
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
-
-                network_model = model[0]
-                model_name = network_model['model']
+                
+                model_name, layers, compile_parameters, fit_parameters = self.format_models_list(model[0])
                 kind = self.format_algorithm_string(model_name)
-                layers = network_model['layers']
-                compile_parameters = network_model['compile_parameters']
-                fit_parameters = network_model['fit_parameters']
-
+                
                 # Dict names
                 label = key+model_name
                 
@@ -458,15 +450,19 @@ class Build(Include):
                 self.test_dict['results'][label] = result
              
     def build_time_series_models(self, models_list):
-
+        """
+        Build multiple time series models on multiple data.
+        
+        Parameters
+        ----------
+        models_list: list
+            List of time series models and parameters.
+        """   
         for key, data in self.test_dict['data'].items():
             for model in models_list:
-                
-                time_series_model = model[0]
-                model_name = time_series_model['model']
-                algorithm = self.format_algorithm_string(model_name)
-                parameters = time_series_model['parameters']
-                test_size = time_series_model['test_size']
+
+                model_name, layers, parameters, test_size = self.format_models_list(model[0])
+                algorithm = self.format_algorithm_string(model_name) 
                 
                 #Change columns names if algorithm is Prophet
                 if algorithm == 'PRH':
