@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
+from xgboost import XGBRegressor
 
 from sklearn.feature_selection import RFE
 from sklearn.feature_selection import SequentialFeatureSelector
@@ -25,14 +26,18 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 from sklearn.model_selection import train_test_split
 
+import tensorflow as tf
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras import Sequential
+
 
 from utils.process import Format, Preprocess
 
 import pmdarima as pm
 from pmdarima import model_selection
 from prophet import Prophet
+
+import gc
 
 class Create:
     
@@ -84,6 +89,8 @@ class Create:
         if algorithm == 'SVR' : regressor = SVR(**parameters)
         
         if algorithm == 'GBR' : regressor = GradientBoostingRegressor(**parameters)
+        
+        if algorithm == 'XGB' : regressor = XGBRegressor(**parameters)
 
 
         return regressor
@@ -152,7 +159,7 @@ class Create:
 
         if selector_algorithm == 'RFE': feature_selector = RFE(estimator = estimator_model, **selector_parameters)
 
-        if selector_algorithm == 'SKB': feature_selector = SelectKBest(estimator = estimator_model, **selector_parameters)
+        if selector_algorithm == 'SKB': feature_selector = SelectKBest(**selector_parameters)
 
         if selector_algorithm == 'SFS': feature_selector = SequentialFeatureSelector(estimator = estimator_model, **selector_parameters)
         
@@ -199,6 +206,7 @@ class Create:
         compile_parameters: dictionary
             Parameters for compile method in dictionary format
         """
+                
         network = Sequential(layers)
         network.compile(**compile_parameters)
 
@@ -412,8 +420,10 @@ class Build(Include):
             Parameters that are going to be used for training the neural network
         """   
         for key, data in self.test_dict['data'].items():
+            
+        
             for model in models_list:
-
+                
                 X_train, X_test, y_train, y_test = self.preprocess_test_data(data, dependent_variable)
                 
                 model_name, layers, compile_parameters, fit_parameters = self.format_models_list(model[0])
@@ -423,8 +433,9 @@ class Build(Include):
                 label = key+model_name
                 
                 #Create NN 
+                layers = self.format_input_layer(layers, X_train)
                 nn = self.create_deep_learning_model(layers, compile_parameters)
-                
+                                
                 if self.feature_selection: 
                     X_train_selected, X_test_selected, selector_name = self.include_feature_selection(model, key, nn, X_train, X_test, y_train)
                     X_train = X_train_selected
@@ -448,6 +459,7 @@ class Build(Include):
                 self.test_dict['X_test'][key] = X_test
                 self.test_dict['y_test'][key] = y_test
                 self.test_dict['results'][label] = result
+        
              
     def build_time_series_models(self, models_list):
         """

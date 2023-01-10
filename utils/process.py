@@ -4,10 +4,10 @@ from math import ceil
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
-from ipywidgets import interact, fixed
-import ipywidgets as widgets
 
 from utils.test import Test
+
+from tensorflow.keras.layers import Input, Dense
 
 
 class Format:
@@ -68,11 +68,26 @@ class Format:
         return classification_report_df
     
     
-    def format_input_layer(layers, n_features):
-        
+    def format_input_layer(self, layers, X_train):
+
+        n_features = X_train.shape[1]
         input_layer = Input(shape=(n_features,))
-        layers.insert(0, input_layer)
+
+        if type(input_layer) == type(layers[0]):
+
+            units = [lyr.input_shape[1] for lyr in layers[1:]]
+            units.append(1)
+
+            layers = [Dense(unit, activation ='relu') for unit in units]
+            del layers[0]
+
+            layers.insert(0, input_layer)
+
+        else:
+            layers.insert(0, input_layer)
+
         return layers
+
     
     def format_prophet_data(self, data):
         
@@ -218,7 +233,6 @@ class Categorize:
 
         return category_dict
 
-    
 class Transform:
     
     def transform_data(self, data, feature_range = (0,1)):

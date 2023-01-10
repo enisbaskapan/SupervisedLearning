@@ -1,0 +1,7 @@
+numpy==1.23.1
+pandas==1.4.3
+pmdarima==2.0.2
+prophet==1.1.1
+scikit_learn==1.1.2
+tensorflow==2.8.0
+xgboost==1.6.2
